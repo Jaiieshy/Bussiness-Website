@@ -1,23 +1,27 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
-// Load environment variables
 dotenv.config();
 
-// MongoDB connection URI - supports both MONGO_URI and MONGODB_URI
-const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/newdeepakmarble';
+const MONGO_URI = process.env.MONGO_URI;
+
+if (!MONGO_URI) {
+  console.error("❌ MONGO_URI is missing! Add it in Railway → Variables");
+  process.exit(1);
+}
 
 let isConnected = false;
+
+
 
 // Connect to MongoDB
 export async function connectDatabase(): Promise<void> {
   try {
-    // Set connection options
     const options = {
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+      serverSelectionTimeoutMS: 5000,
     };
 
-    await mongoose.connect(MONGO_URI, options);
+    await mongoose.connect(MONGO_URI!, options); // <-- FIXED
     isConnected = true;
     console.log('✅ MongoDB Connected');
     console.log(`📦 Database: ${mongoose.connection.db?.databaseName}`);
