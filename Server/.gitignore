@@ -1,0 +1,9 @@
+node_modules/
+dist/
+contacts.json
+*.log
+.env
+.env.local
+database.db
+*.db
+

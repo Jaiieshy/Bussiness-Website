@@ -1,0 +1,18 @@
+# Copy this file to .env and update with your MongoDB connection string
+
+# MongoDB Connection String
+# You can use either MONGO_URI or MONGODB_URI (both work)
+
+# For local MongoDB:
+#MONGO_URI=mongodb://localhost:27017/newdeepakmarble
+# OR
+# MONGODB_URI=mongodb://localhost:27017/newdeepakmarble
+
+# For MongoDB Atlas (Cloud):
+# MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/newdeepakmarble?retryWrites=true&w=majority
+# OR
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/newdeepakmarble?retryWrites=true&w=majority
+
+# Server Port (optional, defaults to 4000)
+#PORT=4000
+
