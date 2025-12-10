@@ -18,7 +18,7 @@ const allowedOrigins: string[] = [
 
 app.use(
   cors({
-    origin: function (origin, callback) {
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       if (!origin) return callback(null, true); // Allow mobile apps / postman
       if (allowedOrigins.includes(origin)) return callback(null, true);
       return callback(new Error("Not allowed by CORS"));
