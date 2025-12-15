@@ -52,12 +52,11 @@
             "@types/node": "^20.10.0",
             "@types/react": "^19.2.2",
             "@vitejs/plugin-react-swc": "^3.10.2",
-            "vite": "6.3.5"
+            "vite": "^6.4.1"
       },
       "scripts": {
-       "dev": "vite",
-       "build": "vite build && cd Server && npm install && npm run build",
-      "start": "node Server/dist/index.js"
+            "dev": "vite",
+            "build": "vite build && cd Server && npm install && npm run build",
+            "start": "node Server/dist/index.js"
       }
-
 }
