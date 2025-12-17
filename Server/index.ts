@@ -1,207 +1,134 @@
-import express from 'express';
-import { connectDatabase, isDatabaseConnected } from './config/database';
-import Contact from './models/Contact';
-
-// Load environment variables
-// Load environment variables
+import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 
-const app = express();
+import { connectDatabase, isDatabaseConnected } from "./config/database";
+import Contact from "./models/Contact";
+
 dotenv.config();
 
-// ALWAYS a string array – TS friendly
-const allowedOrigins: string[] = [
-  process.env.FRONTEND_URL ?? "",
-  "https://your-production-domain.com",
-].filter(Boolean);
+const app = express();
 
-app.use(
-  cors({
-    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      if (!origin) return callback(null, true); // Allow mobile apps / postman
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
-  })
-);
+/* =========================
+   CORS CONFIG (FIXED)
+========================= */
 
+// const allowedOrigins: string[] = [
+//   process.env.FRONTEND_URL ?? "",
+//   "https://www.deepak-marble-and-tiles.com",
 
+// ].filter(Boolean);
 
-
-
-
-
-
-
+// app.use(
+//   cors({
+//     origin: (origin, callback) => {
+//       if (!origin) return callback(null, true); // mobile / postman
+//       if (allowedOrigins.includes(origin)) return callback(null, true);
+//       return callback(null, false); // ❌ do NOT throw error
+//     },
+//     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+//     allowedHeaders: ["Content-Type", "Authorization"],
+//   })
+// );
+app.use(cors({
+  origin: [
+    "https://www.deepak-marble-and-tiles.com",
+    "https://deepak-marble-and-tiles.com"
+  ],
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"],
+}));
+// 🔑 REQUIRED FOR PREFLIGHT
+app.options("*", cors());
 
 app.use(express.json());
 
-// Connect to MongoDB (non-blocking)
+/* =========================
+   DATABASE
+========================= */
+
 connectDatabase().catch(() => {
-  // Connection failed, but server will still start
-  // Database operations will check connection status
+  console.log("❌ MongoDB connection failed");
 });
 
-// Contact form endpoint
-app.post('/api/contact', async (req, res) => {
+/* =========================
+   ROUTES
+========================= */
+
+// Contact form
+app.post("/api/contact", async (req, res) => {
   try {
-    // Check if database is connected
     if (!isDatabaseConnected()) {
-      return res.status(503).json({ 
-        success: false, 
-        error: 'Database not connected. Please check MongoDB connection.' 
+      return res.status(503).json({
+        success: false,
+        error: "Database not connected",
       });
     }
 
     const { name, email, phone, message } = req.body;
 
-    // Validation
     if (!name || !email || !phone) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Name, email, and phone are required' 
+      return res.status(400).json({
+        success: false,
+        error: "Name, email and phone are required",
       });
     }
 
-    // Create new contact using MongoDB
     const newContact = new Contact({
       name,
       email,
       phone,
-      message: message || '',
+      message: message || "",
     });
 
-    // Save to database
     const savedContact = await newContact.save();
 
-    console.log('✅ Contact saved to MongoDB:', savedContact._id);
-    
-    res.status(200).json({ 
-      success: true, 
-      message: 'Contact information received successfully',
-      contactId: savedContact._id
+    return res.status(200).json({
+      success: true,
+      message: "Contact saved successfully",
+      contactId: savedContact._id,
     });
-  } catch (error: any) {
-    console.error('❌ Error saving contact:', error);
-    
-    // Handle Mongoose validation errors
-    if (error.name === 'ValidationError') {
-      const errors = Object.values(error.errors).map((err: any) => err.message);
-      return res.status(400).json({ 
-        success: false, 
-        error: errors.join(', ') 
-      });
-    }
-
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to save contact information' 
+  } catch (error) {
+    console.error("❌ Contact save error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error",
     });
   }
 });
 
-// Get all contacts (for admin/viewing purposes)
-app.get('/api/contacts', async (req, res) => {
+// Get all contacts
+app.get("/api/contacts", async (req, res) => {
   try {
-    // Check if database is connected
     if (!isDatabaseConnected()) {
-      return res.status(503).json({ 
-        success: false, 
-        error: 'Database not connected. Please check MongoDB connection.' 
+      return res.status(503).json({
+        success: false,
+        error: "Database not connected",
       });
     }
 
     const contacts = await Contact.find().sort({ createdAt: -1 });
-    res.status(200).json({ 
-      success: true, 
+
+    return res.status(200).json({
+      success: true,
       contacts,
-      count: contacts.length 
     });
   } catch (error) {
-    console.error('❌ Error reading contacts:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to read contacts' 
+    console.error("❌ Fetch contacts error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to fetch contacts",
     });
   }
 });
 
-// Get contact by ID
-app.get('/api/contacts/:id', async (req, res) => {
-  try {
-    // Check if database is connected
-    if (!isDatabaseConnected()) {
-      return res.status(503).json({ 
-        success: false, 
-        error: 'Database not connected. Please check MongoDB connection.' 
-      });
-    }
-
-    const contact = await Contact.findById(req.params.id);
-    
-    if (!contact) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Contact not found' 
-      });
-    }
-
-    res.status(200).json({ 
-      success: true, 
-      contact 
-    });
-  } catch (error) {
-    console.error('❌ Error reading contact:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to read contact' 
-    });
-  }
-});
-
-// Delete contact by ID
-app.delete('/api/contacts/:id', async (req, res) => {
-  try {
-    // Check if database is connected
-    if (!isDatabaseConnected()) {
-      return res.status(503).json({ 
-        success: false, 
-        error: 'Database not connected. Please check MongoDB connection.' 
-      });
-    }
-
-    const contact = await Contact.findByIdAndDelete(req.params.id);
-    
-    if (!contact) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Contact not found' 
-      });
-    }
-
-    res.status(200).json({ 
-      success: true, 
-      message: 'Contact deleted successfully' 
-    });
-  } catch (error) {
-    console.error('❌ Error deleting contact:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to delete contact' 
-    });
-  }
-});
+/* =========================
+   SERVER
+========================= */
 
 const PORT = process.env.PORT || 4000;
+
 app.listen(PORT, () => {
-  console.log(`🚀 API server running on http://localhost:${PORT}`);
-  console.log(`📝 Contact form endpoint: http://localhost:${PORT}/api/contact`);
-  
-  // Show database status
-  if (!isDatabaseConnected()) {
-    console.log('\n⚠️  WARNING: MongoDB is not connected!');
-    console.log('   API endpoints will return 503 errors until MongoDB is connected.\n');
-  }
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📨 POST /api/contact`);
 });
