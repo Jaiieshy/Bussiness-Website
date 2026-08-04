@@ -2,6 +2,7 @@ services:
   - type: web
     name: deepak-marble-backend
     env: node
+    plan: free
     buildCommand: cd Server && npm install && npm run build
     startCommand: cd Server && npm start
     envVars:
