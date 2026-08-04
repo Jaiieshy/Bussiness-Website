@@ -3,7 +3,7 @@ services:
     name: deepak-marble-backend
     env: node
     plan: free
-    buildCommand: cd Server && npm install && npm run build
+    buildCommand: cd Server && npm ci --include=dev && npm run build
     startCommand: cd Server && npm start
     envVars:
       - key: NODE_ENV
